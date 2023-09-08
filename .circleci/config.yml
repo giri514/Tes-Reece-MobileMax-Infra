@@ -1,0 +1,67 @@
+version: 2.1
+
+#############################################################
+# The global variables for this pipeline, which will be 
+# mostly different on every application.
+#############################################################
+parameters:
+  release-version:
+    type: string
+    default: 1.1.<< pipeline.number >>
+  repo-name:
+    type: string
+    default: punchout-customer-bff
+  ecr-image-name:
+    type: string
+    default: reece/punchout-customer-bff
+  env-repo-url:
+    type: string
+    default: https://github.com/morsco-reece/environments.git
+  env-dir:
+    type: string
+    default: environments/ecomm-dev
+  java-version:
+    type: string
+    default: "11.0"
+
+#############################################################
+# Special CircleCI plugins needed for common operations.
+# The same across all applications.
+#############################################################
+orbs:
+  aws-cli: circleci/aws-cli@2.1.0
+  aws-ecr: circleci/aws-ecr@6.13.0
+  github-cli: circleci/github-cli@2.0.0
+  java-services: morsco-reece/java-services@1.2.0
+  helm: circleci/helm@1.1.2
+  maven: circleci/maven@1.2.0
+  node: circleci/node@5.0.2
+
+#############################################################
+# Defines what jobs are tiggered based on branch
+#############################################################
+workflows:
+  single-job-lifecycle:
+    jobs:
+      # Every branch/PR executes build, test and test coverage
+      # We only publish the build to ECR off of main/master
+      - build
+
+#############################################################
+# Defines the steps of each job defined in workflows
+#############################################################
+jobs:
+  #############################################################
+  # (1) build
+  # a single step for running install, lint, SCA, test, build
+  #############################################################
+  build:
+    resource_class: large
+    executor:
+      name: maven/default
+      tag: '11.0'
+    steps:
+      - checkout
+      - run:
+          command: mvn verify
+          
